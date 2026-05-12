@@ -42,15 +42,15 @@ if ($Thumbprint -notmatch '^[0-9a-fA-F]{40}$') {
     throw "Invalid thumbprint format: '$Thumbprint'. Expected 40 hexadecimal characters (SHA-1)."
 }
 
-Write-Output "New certificate thumbprint: $Thumbprint"
-
 # =========================
 # VALIDATE ENVIRONMENT
 # =========================
 
-# Verify NPWS registry key exists (do not create it — NPWS must be installed)
-if (-not (Test-Path $RegistryPath)) {
-    throw "Registry path '$RegistryPath' does not exist. Is NPWS Application Server installed on this machine?"
+# Verify NPWS registry value exists and read current value (do not create it — NPWS must be installed)
+try {
+    $currentValue = Get-ItemPropertyValue -Path $RegistryPath -Name $RegistryValueName -ErrorAction Stop
+} catch {
+    throw "Registry value '$RegistryValueName' not found at '$RegistryPath'. Is NPWS Application Server installed on this machine?"
 }
 
 # Verify primary service exists
@@ -77,12 +77,8 @@ if ($dependentSvc) {
 # UPDATE REGISTRY
 # =========================
 
-$currentValue = $null
-try {
-    $currentValue = (Get-ItemProperty -Path $RegistryPath -ErrorAction Stop).$RegistryValueName
-} catch {
-    Write-Output "Registry value does not exist yet; it will be created."
-}
+Write-Output "Current thumbprint : $currentValue"
+Write-Output "New thumbprint     : $Thumbprint"
 
 if ($currentValue -ne $Thumbprint) {
     Set-ItemProperty `
@@ -91,9 +87,9 @@ if ($currentValue -ne $Thumbprint) {
         -Value $Thumbprint `
         -Force
 
-    Write-Output "Updated registry value '$RegistryValueName' with new thumbprint."
+    Write-Output "Registry value '$RegistryValueName' updated."
 } else {
-    Write-Output "Registry value already matches the current certificate."
+    Write-Output "Registry value already matches — no update needed."
 }
 
 # =========================
