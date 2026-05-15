@@ -96,8 +96,10 @@ Adjust these values if your installation differs.
 
 | Service            | Behavior                                                                 |
 | ------------------ | ------------------------------------------------------------------------ |
-| `PsrServer`        | **Required.** Always restarted. Script fails if this service is missing. |
-| `PsrBackupService` | **Optional.** Only restarted if it was running before the update. Skipped silently if not installed or stopped. |
+| `PsrServer`        | **Required.** Restarted when the thumbprint changes. Script fails if this service is missing. |
+| `PsrBackupService` | **Optional.** Restarted when the thumbprint changes, but only if it was running before the update. Skipped silently if not installed or stopped. |
+
+Services are only restarted if the registry value was actually updated. If the thumbprint already matches, the script exits without touching any services.
 
 The restart order ensures `PsrBackupService` (which depends on `PsrServer`) is stopped first, then `PsrServer` is restarted, then `PsrBackupService` is started again.
 
@@ -107,7 +109,7 @@ The restart order ensures `PsrBackupService` (which depends on `PsrServer`) is s
 - **"No input provided"** — The script was called without a Certify The Web result object or `-Thumbprint` parameter.
 - **"Certificate thumbprint is empty"** — Certify The Web passed a result but the thumbprint hash was empty. Ensure *Pass Result as First Arg* is enabled on the deployment task.
 - **"Invalid thumbprint format"** — The provided thumbprint is not a valid 40-character SHA-1 hex string. Verify you copied the full thumbprint.
-- **"Registry path ... does not exist"** — NPWS Application Server is not installed on this machine (or uses a non-default registry path). The script refuses to create the key to avoid orphan registry entries.
+- **"Registry value 'ServerCertificateFingerprint' not found at '...'"** — NPWS Application Server is not installed on this machine (or uses a non-default registry path). The script refuses to create the value to avoid orphan registry entries.
 - **"Service 'PsrServer' not found"** — The primary NPWS service is not installed. Verify NPWS Application Server is installed on this machine.
 - **Service restart fails** — Verify the executing account has permission to restart NPWS services.
 - **Registry update fails** — Verify write access to `HKLM\SOFTWARE\MATESO\Password Safe and Repository 8`.

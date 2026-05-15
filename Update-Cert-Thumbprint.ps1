@@ -80,6 +80,8 @@ if ($dependentSvc) {
 Write-Output "Current thumbprint : $currentValue"
 Write-Output "New thumbprint     : $Thumbprint"
 
+$registryUpdated = $false
+
 if ($currentValue -ne $Thumbprint) {
     Set-ItemProperty `
         -Path $RegistryPath `
@@ -88,6 +90,7 @@ if ($currentValue -ne $Thumbprint) {
         -Force
 
     Write-Output "Registry value '$RegistryValueName' updated."
+    $registryUpdated = $true
 } else {
     Write-Output "Registry value already matches - no update needed."
 }
@@ -96,18 +99,22 @@ if ($currentValue -ne $Thumbprint) {
 # RESTART SERVICES
 # =========================
 
-# Stop dependent service first (if applicable) to respect dependency order
-if ($restartDependentService) {
-    Write-Output "Stopping dependent service: $DependentService"
-    Stop-Service -Name $DependentService -Force -ErrorAction Stop
-}
+if (-not $registryUpdated) {
+    Write-Output "No registry change - skipping service restart."
+} else {
+    # Stop dependent service first (if applicable) to respect dependency order
+    if ($restartDependentService) {
+        Write-Output "Stopping dependent service: $DependentService"
+        Stop-Service -Name $DependentService -Force -ErrorAction Stop
+    }
 
-Write-Output "Restarting primary service: $PrimaryService"
-Restart-Service -Name $PrimaryService -Force -ErrorAction Stop
+    Write-Output "Restarting primary service: $PrimaryService"
+    Restart-Service -Name $PrimaryService -Force -ErrorAction Stop
 
-if ($restartDependentService) {
-    Write-Output "Starting dependent service: $DependentService"
-    Start-Service -Name $DependentService -ErrorAction Stop
+    if ($restartDependentService) {
+        Write-Output "Starting dependent service: $DependentService"
+        Start-Service -Name $DependentService -ErrorAction Stop
+    }
 }
 
 Write-Output "Deployment task completed successfully."
