@@ -89,7 +89,7 @@ if ($currentValue -ne $Thumbprint) {
 
     Write-Output "Registry value '$RegistryValueName' updated."
 } else {
-    Write-Output "Registry value already matches — no update needed."
+    Write-Output "Registry value already matches - no update needed."
 }
 
 # =========================
